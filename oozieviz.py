@@ -94,7 +94,7 @@ class OozieWorkflow:
                     # actions.append(OozieShell(markup))
                     actions.append(OozieShell())
                 elif action_type == "hive":
-                    actions.append(OozieHive())
+                    actions.append(OozieHive(markup))
                 elif action_type == "sub-workflow":
                     actions.append(OozieSubWf())
                 elif action_type == "email":
@@ -135,6 +135,11 @@ class OozieShell(OozieAction):
 
 
 class OozieHive(OozieAction):
+    def __init__(self, markup):
+        self.job_tracker = None
+        self.name_node = None
+        self.script = None
+
     def accept(self, visitor: OozieVisitor):
         visitor.visit_hive(self)
 
