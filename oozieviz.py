@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import argparse
 from abc import ABC
 from os.path import basename
-from xml.etree import ElementTree as ET
-from graphviz import Digraph
+from xml.etree import ElementTree
+# from graphviz import Digraph
 
 
 def parse_args():
@@ -22,7 +22,13 @@ class OozieVisitor(ABC):
     def visit_end(self, oozie_end):
         pass
 
+    def visit_kill(self, oozie_kill):
+        pass
+
     def visit_shell(self, oozie_shell):
+        pass
+
+    def visit_hive(self, oozie_hive):
         pass
 
     def visit_subwf(self, oozie_subwf):
@@ -42,8 +48,14 @@ class OozieGraphViz01(OozieVisitor):
     def visit_end(self, oozie_end):
         print("=== end")
 
+    def visit_kill(self, oozie_kill):
+        print("=== kill")
+
     def visit_shell(self, oozie_shell):
         print("=== shell")
+
+    def visit_hive(self, oozie_hive):
+        print("=== hive")
 
     def visit_subwf(self, oozie_subwf):
         print("=== subwf")
@@ -59,7 +71,7 @@ class OozieWorkflow:
     def __init__(self, workflow_path):
         self.wf_path = workflow_path
         self.wf_name = basename(workflow_path)
-        self.root = ET.parse(workflow_path).getroot()
+        self.root = ElementTree.parse(workflow_path).getroot()
         self.actions = self.list_actions()
 
     def list_actions(self):
@@ -72,14 +84,17 @@ class OozieWorkflow:
                 actions.append(OozieStart())
             elif tag == "end":
                 actions.append(OozieEnd())
+            elif tag == "kill":
+                actions.append(OozieKill())
             elif tag == "action":
                 action_type = markup[0].tag.split("}", 1)[1]
 
                 if action_type == "shell":
                     # TODO : passer la markup au constructeur de l'action, afin que l'action puisse en extraire des infos spécifiques
                     # actions.append(OozieShell(markup))
-
                     actions.append(OozieShell())
+                elif action_type == "hive":
+                    actions.append(OozieHive())
                 elif action_type == "sub-workflow":
                     actions.append(OozieSubWf())
                 elif action_type == "email":
@@ -109,9 +124,19 @@ class OozieEnd(OozieAction):
         visitor.visit_end(self)
 
 
+class OozieKill(OozieAction):
+    def accept(self, visitor: OozieVisitor):
+        visitor.visit_kill(self)
+
+
 class OozieShell(OozieAction):
     def accept(self, visitor: OozieVisitor):
         visitor.visit_shell(self)
+
+
+class OozieHive(OozieAction):
+    def accept(self, visitor: OozieVisitor):
+        visitor.visit_hive(self)
 
 
 class OozieSubWf(OozieAction):
